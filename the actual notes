@@ -185,7 +185,7 @@ R_and_D_Nix2
 ssh -p21600 -MS /tmp/t1 Kmichae@127.0.0.1
 
 
-
+kpersky_start.ps1
 
 
 
